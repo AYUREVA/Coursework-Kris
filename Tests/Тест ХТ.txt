@@ -1,0 +1,468 @@
+#include <iostream>
+#include <vector>
+#include <string>
+#include <iomanip>
+#include <limits>
+#include <fstream>
+#include <sstream>
+#include "ProductHashTable.h"
+
+using namespace std;
+
+class HashTableTester {
+private:
+    ProductHashTable* hashTable;
+    vector<Product> products;
+
+    void printMenu() {
+        cout << "\n╔═══════════════════════════════════════╗";
+        cout << "\n║         ТЕСТИРОВАНИЕ ХЕШ-ТАБЛИЦЫ      ║";
+        cout << "\n╠═══════════════════════════════════════╣";
+        cout << "\n║ 1. Создать новую хеш-таблицу          ║";
+        cout << "\n║ 2. Добавить товар                     ║";
+        cout << "\n║ 3. Удалить товар по артикулу          ║";
+        cout << "\n║ 4. Найти товар по артикулу            ║";
+        cout << "\n║ 5. Показать все товары                ║";
+        cout << "\n║ 6. Показать хеш-таблицу (отладка)     ║";
+        cout << "\n║ 7. Загрузить из файла                 ║";
+        cout << "\n║ 8. Сохранить в файл                   ║";
+        cout << "\n║ 9. Очистить таблицу                   ║";
+        cout << "\n║ 10. Показать статистику таблицы       ║";
+        cout << "\n║ 11. Тестовое заполнение               ║";
+        cout << "\n║ 0. Выход                              ║";
+        cout << "\n╚═══════════════════════════════════════╝";
+        cout << "\n▶ Выберите действие: ";
+    }
+
+    void createHashTable() {
+        if (hashTable) {
+            delete hashTable;
+        }
+
+        int size;
+        cout << "   ▷ Введите начальный размер хеш-таблицы: ";
+        cin >> size;
+
+        if (size <= 0) {
+            cout << "✖ Ошибка: размер должен быть положительным!\n";
+            return;
+        }
+
+        hashTable = new ProductHashTable(size);
+        products.clear();
+        cout << "✔ Хеш-таблица создана с размером " << size << endl;
+    }
+
+    void addProduct() {
+        if (!hashTable) {
+            cout << "✖ Ошибка: сначала создайте хеш-таблицу!\n";
+            return;
+        }
+
+        Product product;
+        cout << "   ▷ Введите артикул: ";
+        cin >> product.article;
+
+        cout << "   ▷ Введите название товара: ";
+        cin.ignore();
+        getline(cin, product.name);
+
+        cout << "   ▷ Введите цену: ";
+        cin >> product.price;
+
+        if (product.price < 0) {
+            cout << "✖ Ошибка: цена не может быть отрицательной!\n";
+            return;
+        }
+
+        // Проверяем, есть ли уже товар с таким артикулом
+        int steps;
+        int existingIndex = hashTable->search(product.article, steps);
+
+        if (existingIndex != -1) {
+            cout << "⚠ Товар с артикулом " << product.article << " уже существует.\n";
+            cout << "   Текущий товар: " << products[existingIndex].name
+                 << " (цена: " << products[existingIndex].price << ")\n";
+            cout << "   Обновить данные? (y/n): ";
+            char choice;
+            cin >> choice;
+
+            if (choice == 'y' || choice == 'Y') {
+                products[existingIndex] = product;
+                cout << "✔ Данные товара обновлены\n";
+            } else {
+                cout << "⌫ Операция отменена\n";
+            }
+            return;
+        }
+
+        // Добавляем новый товар
+        int newIndex = products.size();
+        products.push_back(product);
+
+        if (hashTable->insert(product.article, newIndex)) {
+            cout << "✔ Товар добавлен (индекс: " << newIndex << ")\n";
+        } else {
+            cout << "✖ Ошибка при добавлении в хеш-таблицу\n";
+            products.pop_back(); // Откатываем добавление
+        }
+    }
+
+    void removeProduct() {
+        if (!hashTable) {
+            cout << "✖ Ошибка: сначала создайте хеш-таблицу!\n";
+            return;
+        }
+
+        int article;
+        cout << "   ▷ Введите артикул товара для удаления: ";
+        cin >> article;
+
+        int steps;
+        int index = hashTable->search(article, steps);
+
+        if (index == -1) {
+            cout << "✖ Товар с артикулом " << article << " не найден\n";
+            return;
+        }
+
+        cout << "   Найден товар: " << products[index].name
+             << " (цена: " << products[index].price << ")\n";
+        cout << "   Удалить? (y/n): ";
+        char choice;
+        cin >> choice;
+
+        if (choice == 'y' || choice == 'Y') {
+            if (hashTable->remove(article)) {
+                cout << "✔ Товар удален из хеш-таблицы\n";
+                cout << "ℹ Примечание: товар остается в массиве, но недоступен через поиск\n";
+            } else {
+                cout << "✖ Ошибка при удалении\n";
+            }
+        } else {
+            cout << "⌫ Операция отменена\n";
+        }
+    }
+
+    void searchProduct() {
+        if (!hashTable) {
+            cout << "✖ Ошибка: сначала создайте хеш-таблицу!\n";
+            return;
+        }
+
+        int article;
+        cout << "   ▷ Введите артикул для поиска: ";
+        cin >> article;
+
+        int steps;
+        int index = hashTable->search(article, steps);
+
+        if (index != -1) {
+            const Product& product = products[index];
+            cout << "✔ Товар найден за " << steps << " шагов:\n";
+            cout << "   Артикул: " << product.article << endl;
+            cout << "   Название: " << product.name << endl;
+            cout << "   Цена: " << fixed << setprecision(2) << product.price << " руб." << endl;
+            cout << "   Индекс в массиве: " << index << endl;
+        } else {
+            cout << "✖ Товар не найден (потребовалось " << steps << " шагов)\n";
+        }
+    }
+
+    void showAllProducts() {
+        if (products.empty()) {
+            cout << "ℹ Список товаров пуст\n";
+            return;
+        }
+
+        cout << "\n═══ СПИСОК ВСЕХ ТОВАРОВ ═══\n";
+        cout << left << setw(10) << "Индекс" << setw(12) << "Артикул"
+             << setw(25) << "Название" << setw(10) << "Цена" << endl;
+        cout << string(60, '-') << endl;
+
+        for (size_t i = 0; i < products.size(); ++i) {
+            const Product& p = products[i];
+            cout << left << setw(10) << i << setw(12) << p.article
+                 << setw(25) << p.name << setw(10) << fixed << setprecision(2) << p.price << endl;
+        }
+        cout << "\nВсего товаров: " << products.size() << endl;
+    }
+
+    void showHashTable() {
+        if (!hashTable) {
+            cout << "✖ Ошибка: сначала создайте хеш-таблицу!\n";
+            return;
+        }
+
+        cout << "\n═══ ОТЛАДОЧНАЯ ИНФОРМАЦИЯ О ХЕШ-ТАБЛИЦЕ ═══\n";
+        cout << "Capacity: " << hashTable->getCapacity() << ", Size: " << hashTable->getSize()
+             << ", Load Factor: " << fixed << setprecision(2) << hashTable->getLoadFactor() << endl;
+        cout << "\nЛегенда статусов: 0 = EMPTY, 1 = OCCUPIED, 2 = DELETED\n";
+        cout << endl;
+
+        // Подсчитываем статистику
+        int emptyCount = 0, occupiedCount = 0, deletedCount = 0;
+
+        // Получаем информацию о каждом слоте
+        for (int i = 0; i < hashTable->getCapacity(); ++i) {
+            HashEntry slot = hashTable->getSlotInfo(i);
+            cout << "Slot " << setw(3) << i << ": ";
+
+            if (slot.status == 0) {
+                cout << "[EMPTY] Status=0";
+                emptyCount++;
+            }
+            else if (slot.status == 1) {
+                cout << "[OCCUPIED] Status=1, Key=" << slot.key
+                     << ", Index=" << slot.index;
+                occupiedCount++;
+            }
+            else if (slot.status == 2) {
+                cout << "[DELETED] Status=2, Key=" << slot.key
+                     << ", Index=" << slot.index;
+                deletedCount++;
+            }
+            else {
+                cout << "[UNKNOWN] Status=" << slot.status;
+            }
+
+            cout << endl;
+        }
+
+        cout << "\n═══ СТАТИСТИКА СЛОТОВ ═══\n";
+        cout << "Пустых слотов (0): " << emptyCount << endl;
+        cout << "Занятых слотов (1): " << occupiedCount << endl;
+        cout << "Удаленных слотов (2): " << deletedCount << endl;
+        cout << "═══════════════════════════\n";
+    }
+
+    void loadFromFile() {
+        if (!hashTable) {
+            cout << "✖ Ошибка: сначала создайте хеш-таблицу!\n";
+            return;
+        }
+
+        string filename;
+        cout << "   ▷ Введите имя файла: ";
+        cin >> filename;
+
+        cout << "   ▷ Сколько строк загрузить из файла? (0 = все): ";
+        int maxLines;
+        cin >> maxLines;
+
+        if (maxLines < 0) {
+            cout << "✖ Ошибка: количество строк не может быть отрицательным!\n";
+            return;
+        }
+
+        if (loadFromFileWithLimit(filename, maxLines)) {
+            cout << "✔ Данные загружены из файла " << filename << endl;
+            cout << "   Загружено товаров в массив: " << products.size() << endl;
+            cout << "   Добавлено в хеш-таблицу: " << hashTable->getSize() << endl;
+        } else {
+            cout << "✖ Ошибка при загрузке файла " << filename << endl;
+        }
+    }
+
+    bool loadFromFileWithLimit(const string& filename, int maxLines) {
+        ifstream file(filename);
+        if (!file.is_open()) {
+            return false;
+        }
+
+        products.clear();
+        hashTable->clear();
+
+        string line;
+        int index = 0;
+        int loadedLines = 0;
+        int successfulInserts = 0;
+
+        while (getline(file, line) && (maxLines == 0 || loadedLines < maxLines)) {
+            istringstream iss(line);
+            Product product;
+
+            if (!(iss >> product.article >> product.name >> product.price)) {
+                continue;  // Пропускаем некорректные строки
+            }
+
+            products.push_back(product);
+
+            if (hashTable->insert(product.article, index)) {
+                successfulInserts++;
+            } else {
+                cout << "⚠ Не удалось добавить в хеш-таблицу товар: "
+                     << product.article << " " << product.name << endl;
+            }
+
+            index++;
+            loadedLines++;
+        }
+
+        file.close();
+
+        cout << "   Обработано строк: " << loadedLines << endl;
+        cout << "   Успешно добавлено в хеш-таблицу: " << successfulInserts << endl;
+
+        return true;
+    }
+
+    void saveToFile() {
+        if (!hashTable) {
+            cout << "✖ Ошибка: сначала создайте хеш-таблицу!\n";
+            return;
+        }
+
+        string filename;
+        cout << "   ▷ Введите имя файла для сохранения: ";
+        cin >> filename;
+
+        if (hashTable->exportToFile(filename, products)) {
+            cout << "✔ Данные сохранены в файл " << filename << endl;
+        } else {
+            cout << "✖ Ошибка при сохранении в файл " << filename << endl;
+        }
+    }
+
+    void clearTable() {
+        if (!hashTable) {
+            cout << "✖ Ошибка: сначала создайте хеш-таблицу!\n";
+            return;
+        }
+
+        cout << "   Очистить таблицу? Все данные будут потеряны! (y/n): ";
+        char choice;
+        cin >> choice;
+
+        if (choice == 'y' || choice == 'Y') {
+            hashTable->clear();
+            products.clear();
+            cout << "✔ Таблица очищена\n";
+        } else {
+            cout << "⌫ Операция отменена\n";
+        }
+    }
+
+    void showStatistics() {
+        if (!hashTable) {
+            cout << "✖ Ошибка: сначала создайте хеш-таблицу!\n";
+            return;
+        }
+
+        cout << "\n═══ СТАТИСТИКА ХЕШ-ТАБЛИЦЫ ═══\n";
+        cout << "Размер таблицы: " << hashTable->getCapacity() << endl;
+        cout << "Занято слотов: " << hashTable->getSize() << endl;
+        cout << "Коэффициент загрузки: " << fixed << setprecision(2)
+             << hashTable->getLoadFactor() << endl;
+        cout << "Товаров в массиве: " << products.size() << endl;
+
+        // Подсчет статистики по статусам
+        int emptySlots = hashTable->getCapacity() - hashTable->getSize();
+        cout << "Пустых слотов (status=0): " << emptySlots << endl;
+        cout << "Занятых слотов (status=1): " << hashTable->getSize() << endl;
+        cout << "Удаленных слотов (status=2): [требует доступа к table]" << endl;
+
+        cout << "═══════════════════════════════\n";
+    }
+
+    void testFill() {
+        if (!hashTable) {
+            cout << "✖ Ошибка: сначала создайте хеш-таблицу!\n";
+            return;
+        }
+
+        cout << "   Добавить тестовые данные? (y/n): ";
+        char choice;
+        cin >> choice;
+
+        if (choice != 'y' && choice != 'Y') {
+            cout << "⌫ Операция отменена\n";
+            return;
+        }
+
+        // Тестовые товары
+        vector<Product> testProducts = {
+            {1001, "Хлеб_белый", 25.50},
+            {1002, "Молоко_3.2%", 68.90},
+            {1003, "Сыр_российский", 890.00},
+            {1004, "Масло_сливочное", 120.75},
+            {1005, "Яйца_С1", 95.60},
+            {1006, "Мука_пшеничная", 45.30},
+            {1007, "Сахар_песок", 55.80},
+            {1008, "Соль_поваренная", 15.20},
+            {1009, "Чай_черный", 185.40},
+            {1010, "Кофе_растворимый", 245.90}
+        };
+
+        int added = 0;
+        for (const auto& product : testProducts) {
+            int steps;
+            if (hashTable->search(product.article, steps) == -1) {
+                int newIndex = products.size();
+                products.push_back(product);
+                if (hashTable->insert(product.article, newIndex)) {
+                    added++;
+                }
+            }
+        }
+
+        cout << "✔ Добавлено " << added << " тестовых товаров\n";
+    }
+
+public:
+    HashTableTester() : hashTable(nullptr) {}
+
+    ~HashTableTester() {
+        if (hashTable) {
+            delete hashTable;
+        }
+    }
+
+    void run() {
+        cout << "🛒 Тестирование хеш-таблицы товаров" << endl;
+        cout << "Формат файла: артикул название цена (через пробел)" << endl;
+
+        int choice;
+        do {
+            printMenu();
+            cin >> choice;
+
+            // Очистка буфера в случае неверного ввода
+            if (cin.fail()) {
+                cin.clear();
+                cin.ignore(numeric_limits<streamsize>::max(), '\n');
+                cout << "✖ Неверный ввод! Попробуйте снова.\n";
+                continue;
+            }
+
+            switch (choice) {
+                case 1: createHashTable(); break;
+                case 2: addProduct(); break;
+                case 3: removeProduct(); break;
+                case 4: searchProduct(); break;
+                case 5: showAllProducts(); break;
+                case 6: showHashTable(); break;
+                case 7: loadFromFile(); break;
+                case 8: saveToFile(); break;
+                case 9: clearTable(); break;
+                case 10: showStatistics(); break;
+                case 11: testFill(); break;
+                case 0:
+                    cout << "⌫ Завершение работы...\n";
+                    break;
+                default:
+                    cout << "✖ Неверный выбор! Попробуйте снова.\n";
+            }
+
+        } while (choice != 0);
+    }
+};
+
+int main() {
+    system("chcp 65001");
+
+    HashTableTester tester;
+    tester.run();
+
+    return 0;
+}
