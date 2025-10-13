@@ -1,7 +1,6 @@
 #include "AnimalHashTable.h"
 #include <fstream>
 #include <sstream>
-#include <iostream>
 #include <iomanip>
 
 AnimalHashTable::AnimalHashTable(int initialSize)
@@ -13,13 +12,10 @@ AnimalHashTable::~AnimalHashTable() {
     delete[] table;
 }
 
-// Хеш-функция: СВЕРТКА (складываем ASCII-коды символов по чанкам)
 int AnimalHashTable::primaryHash(const std::string& key) const {
     unsigned long hash = 0;
-    // Проходим по строке с шагом 4, "сворачивая" ее
     for (size_t i = 0; i < key.length(); i += 4) {
         unsigned int chunk = 0;
-        // Собираем 4-байтовый чанк
         for (size_t j = i; j < i + 4 && j < key.length(); ++j) {
             chunk = (chunk << 8) + static_cast<unsigned char>(key[j]);
         }
@@ -28,7 +24,6 @@ int AnimalHashTable::primaryHash(const std::string& key) const {
     return hash % capacity;
 }
 
-// Шаг линейного пробирования: k=3
 int AnimalHashTable::getStepSize() const {
     return 3;
 }
@@ -39,18 +34,17 @@ int AnimalHashTable::findSlot(const std::string& key, bool forInsertion) const {
     int deletedSlot = -1;
 
     for (int i = 0; i < capacity; ++i) {
-        if (table[index].status == 0) { // Слот пуст
-            // Если искали место для вставки и нашли удаленный слот, используем его
+        if (table[index].status == 0) {
             return forInsertion && deletedSlot != -1 ? deletedSlot : index;
         }
-        else if (table[index].status == 1) { // Слот занят
+        else if (table[index].status == 1) {
             if (table[index].key == key) {
-                return index; // Ключ найден
+                return index;
             }
         }
-        else if (table[index].status == 2) { // Слот удален
+        else if (table[index].status == 2) {
             if (forInsertion && deletedSlot == -1) {
-                deletedSlot = index; // Запоминаем первый удаленный слот
+                deletedSlot = index;
             }
         }
 
@@ -66,11 +60,10 @@ bool AnimalHashTable::insert(const std::string& nickname, int index) {
     }
 
     int slot = findSlot(nickname, true);
-    if (slot == -1) { // Таблица заполнена
+    if (slot == -1) {
         return false;
     }
 
-    // Если элемент уже существует, обновляем его индекс
     if (table[slot].status == 1 && table[slot].key == nickname) {
         table[slot].index = index;
         return true;
@@ -87,13 +80,12 @@ bool AnimalHashTable::insert(const std::string& nickname, int index) {
 bool AnimalHashTable::remove(const std::string& nickname) {
     int slot = findSlot(nickname, false);
     if (slot == -1 || table[slot].status != 1) {
-        return false; // Элемент не найден
+        return false;
     }
 
-    table[slot].status = 2; // Помечаем как удаленный
+    table[slot].status = 2;
     size--;
 
-    // Уменьшение размера таблицы при необходимости
     if (capacity > initialCapacity &&
         static_cast<double>(size) / capacity < LOAD_FACTOR_MIN) {
         int newCapacity = (capacity / 2 > initialCapacity) ? (capacity / 2) : initialCapacity;
@@ -111,18 +103,17 @@ int AnimalHashTable::search(const std::string& nickname, int& steps) const {
     for (int i = 0; i < capacity; ++i) {
         steps++;
 
-        if (table[index].status == 0) { // Пустой слот, значит ключа нет
+        if (table[index].status == 0) {
             return -1;
         }
         if (table[index].status == 1 && table[index].key == nickname) {
-            return table[index].index; // Ключ найден
+            return table[index].index;
         }
-        // Если статус 2 (удален), продолжаем поиск
 
         index = (index + step) % capacity;
     }
 
-    return -1; // Ключ не найден после полного прохода
+    return -1;
 }
 
 void AnimalHashTable::clear() {
@@ -146,9 +137,8 @@ void AnimalHashTable::rehash(int newCapacity) {
 
     table = new HashEntry[newCapacity];
     capacity = newCapacity;
-    size = 0; // Размер будет восстановлен при вставке
+    size = 0;
 
-    // Переносим все занятые элементы в новую таблицу
     for (int i = 0; i < oldCapacity; ++i) {
         if (oldTable[i].status == 1) {
             insert(oldTable[i].key, oldTable[i].index);
@@ -204,7 +194,6 @@ bool AnimalHashTable::importFromFile(const std::string& filename,
         std::istringstream iss(line);
         Animal animal;
 
-        // Читаем данные в формате: Кличка Вид Вольер
         if (!(iss >> animal.nickname >> animal.species >> animal.cage)) {
             continue;
         }

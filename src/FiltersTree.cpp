@@ -353,12 +353,10 @@ template class FilterNode<double>;
 template class FilterNode<int>;
 template class FilterNode<std::string>;
 
-// НОВАЯ РЕАЛИЗАЦИЯ DateUtils
 namespace DateUtils {
-    // Конвертирует DD.MM.YYYY в YYYY-MM-DD. Возвращает пустую строку при ошибке.
     std::string normalizeDateForComparison(const std::string& date) {
         if (date.length() != 10 || date[2] != '.' || date[5] != '.') {
-            return ""; // Неверный формат/длина
+            return "";
         }
 
         try {
@@ -367,14 +365,14 @@ namespace DateUtils {
             int year = std::stoi(date.substr(6, 4));
 
             if (day < 1 || day > 31 || month < 1 || month > 12 || year < 2000 || year > 2025) {
-                return ""; // Неверный диапазон
+                return "";
             }
 
             std::ostringstream oss;
             oss << year << "-" << std::setfill('0') << std::setw(2) << month << "-" << std::setw(2) << day;
             return oss.str();
         } catch (...) {
-            return ""; // Ошибка конвертации в число
+            return "";
         }
     }
 
@@ -387,7 +385,7 @@ namespace DateUtils {
         std::string norm2 = normalizeDateForComparison(date2);
 
         if (norm1.empty() || norm2.empty()) {
-            return 0; // Считаем некорректные даты равными
+            return 0;
         }
 
         if (norm1 < norm2) return -1;
