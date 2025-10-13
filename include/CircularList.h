@@ -28,7 +28,6 @@ private:
     };
     Node *head;
 
-    // Вспомогательный метод для копирования
     void copyFrom(const CircularList &other);
 };
 

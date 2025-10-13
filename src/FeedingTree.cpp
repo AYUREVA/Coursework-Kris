@@ -1,7 +1,6 @@
 #include "FeedingTree.h"
 #include <fstream>
 #include <sstream>
-#include <iostream>
 #include <utility>
 #include <iomanip>
 
@@ -85,7 +84,6 @@ bool FeedingTree::importFromFile(const std::string &filename, DynamicArray<Feedi
     return true;
 }
 
-// Реализовано: Сохранение данных в файл
 bool FeedingTree::exportToFile(const std::string& filename, const DynamicArray<FeedingEntry>& feedings) const {
     std::ofstream file(filename);
     if (!file.is_open()) {
@@ -101,9 +99,6 @@ bool FeedingTree::exportToFile(const std::string& filename, const DynamicArray<F
     file.close();
     return true;
 }
-
-
-// --- Логика балансировки AVL-дерева (без изменений) ---
 
 FeedingNode* FeedingTree::rotateLeft(FeedingNode* a) {
     FeedingNode* b = a->right;

@@ -136,7 +136,7 @@ void CircularList::copyFrom(const CircularList &other) {
 
 int CircularList::get(int index) const {
     if (!head || index < 0 || index >= size()) {
-        return -1; // Возвращаем -1 в случае ошибки или выхода за границы
+        return -1;
     }
     Node* cur = head;
     for (int i = 0; i < index; ++i) {

@@ -8,7 +8,6 @@
 #include <fstream>
 #include <iomanip>
 
-// Подключаем обновленные структуры данных
 #include "DynamicArray.h"
 #include "AnimalHashTable.h"
 #include "FeedingTree.h"
@@ -32,8 +31,6 @@ void SetupImGuiStyle() {
     style.Colors[ImGuiCol_FrameBg] = ImVec4(0.25f, 0.25f, 0.25f, 1.00f);
     style.Colors[ImGuiCol_FrameBgHovered] = ImVec4(0.35f, 0.35f, 0.35f, 1.00f);
     style.Colors[ImGuiCol_FrameBgActive] = ImVec4(0.45f, 0.45f, 0.45f, 1.00f);
-
-    // БЛАГОРОДНЫЕ ЗЕЛЕНЫЕ ЦВЕТА:
 
     // Основной цвет текста - белый
     style.Colors[ImGuiCol_Text] = ImVec4(1.00f, 1.00f, 1.00f, 1.00f); // Белый текст
@@ -261,10 +258,32 @@ int main(int, char**)
             ImGui::SetNextWindowSize(ImVec2((float)win_w, (float)win_h - 30));
             if (ImGui::Begin("Animal Management", nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoBringToFrontOnFocus)) {
                 if (ImGui::Button(" Загрузить Животных")) {
-                    animals.clear(); animalTable.clear(); animalTable.resize(initialTableSize);
-                    if (animalTable.importFromFile(animalsFile, animals, 0)) {
-                        rebuildAllStructures(); statusMessage = "Загружено животных: " + std::to_string(animals.size());
-                    } else { statusMessage = "Ошибка загрузки файла " + std::string(animalsFile); }
+                    std::ifstream file(animalsFile);
+                    if (file.is_open()) {
+                        int loadedCount = 0;
+                        int skippedCount = 0;
+                        std::string line;
+                        while (std::getline(file, line)) {
+                            std::istringstream iss(line);
+                            std::string nickname, species, cage;
+                            if (iss >> nickname >> species >> cage) {
+                                if (isNicknameUnique(nickname, animals)) {
+                                    animals.push_back(Animal(nickname, species, cage));
+                                    loadedCount++;
+                                } else {
+                                    skippedCount++;
+                                }
+                            }
+                        }
+                        file.close();
+                        if (loadedCount > 0) {
+                            rebuildAllStructures();
+                        }
+                        statusMessage = "Добавлено новых животных: " + std::to_string(loadedCount) +
+                                        ". Пропущено дубликатов: " + std::to_string(skippedCount) + ".";
+                    } else {
+                        statusMessage = "Ошибка загрузки файла " + std::string(animalsFile);
+                    }
                     statusMessageTime = ImGui::GetTime();
                 }
                 ImGui::SameLine();
@@ -276,12 +295,12 @@ int main(int, char**)
                 ImGui::SameLine();
                 if (ImGui::Button(" Очистить ХТ")) {
                     animals.clear();
-                    feedings.clear(); // Добавлена очистка кормлений
+                    feedings.clear();
                     rebuildAllStructures();
                     statusMessage = "Справочник животных, кормлений и все структуры данных очищены.";
                     statusMessageTime = ImGui::GetTime();
                 }
-                ImGui::SameLine(ImGui::GetWindowWidth() - 120); // Сдвигаем кнопку вправо
+                ImGui::SameLine(ImGui::GetWindowWidth() - 120);
                 if (ImGui::Button("О Программе")) {
                     statusMessage = "Курсовая работа: Зоопарк; Структуры данных: Хеш-таблица, АВЛ-дерево, Двусвязный кольцевой список";
                     statusMessageTime = ImGui::GetTime();
@@ -297,7 +316,6 @@ int main(int, char**)
                         ImGui::InputTextWithHint("Вольер", "Например, 'A-12'", newCage, IM_ARRAYSIZE(newCage));
 
                         if (ImGui::Button("Добавить Животное", ImVec2(ImGui::GetContentRegionAvail().x * 0.5f - 4, 0))) {
-                            // Проверка на пустые поля
                             if (strlen(newNickname) == 0) {
                                 statusMessage = "Ошибка: Кличка животного не может быть пустой.";
                             } else if (strlen(newSpecies) == 0) {
@@ -330,7 +348,6 @@ int main(int, char**)
                                 if (idx >= 0 && animals[idx].species == newSpecies && animals[idx].cage == newCage) {
                                     std::string removedNickname = animals[idx].nickname;
                                     animals.erase(idx);
-                                    // Удаляем связанные кормления
                                     DynamicArray<FeedingEntry> new_feedings;
                                     for(size_t i = 0; i < feedings.size(); ++i) {
                                         if (feedings[i].nickname != removedNickname) {
@@ -495,8 +512,8 @@ int main(int, char**)
             ImGui::SetNextWindowSize(ImVec2((float)win_w, (float)win_h - 30));
             if (ImGui::Begin("Feeding Management", nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoBringToFrontOnFocus)) {
                 if (ImGui::Button(" Загрузить Кормления")) {
-                    feedings.clear();
                     int skipped_count = 0;
+                    int loaded_count = 0;
 
                     std::ifstream file(feedingsFile);
                     if (file.is_open()) {
@@ -506,17 +523,17 @@ int main(int, char**)
                             FeedingEntry e;
                             if (iss >> e.nickname >> e.feedType >> e.quantity >> e.date) {
                                 int steps;
-                                // Проверяем, существует ли животное в хеш-таблице
                                 if (animalTable.search(e.nickname, steps) >= 0) {
                                     feedings.push_back(e);
+                                    loaded_count++;
                                 } else {
-                                    skipped_count++; // Если нет, увеличиваем счетчик пропущенных
+                                    skipped_count++;
                                 }
                             }
                         }
                         file.close();
                         rebuildAllStructures();
-                        statusMessage = "Загружено кормлений: " + std::to_string(feedings.size()) +
+                        statusMessage = "Добавлено кормлений: " + std::to_string(loaded_count) +
                                         " (пропущено " + std::to_string(skipped_count) + " из-за отсутствия животных).";
                     } else {
                         statusMessage = "Ошибка загрузки файла " + std::string(feedingsFile);
@@ -544,27 +561,24 @@ int main(int, char**)
 
                             // --- Вспомогательные функции форматирования (из вашего примера) ---
 
-                            // 1. Корректно считает видимые символы в строке UTF-8 (кириллица)
                             auto countChars = [](const std::string& str) -> int {
                                 int count = 0;
                                 for (size_t i = 0; i < str.length(); i++) {
-                                    if ((str[i] & 0xC0) != 0x80) { // Считаем только начальные байты символов UTF-8
+                                    if ((str[i] & 0xC0) != 0x80) {
                                         count++;
                                     }
                                 }
                                 return count;
                             };
 
-                            // 2. Функция для выравнивания текста по левому краю (добавляет пробелы справа)
                             auto padRight = [&countChars](const std::string& str, int width) -> std::string {
                                 int charCount = countChars(str);
                                 if (charCount >= width) {
-                                    return str; // Можно добавить обрезку, если нужно
+                                    return str;
                                 }
                                 return str + std::string(width - charCount, ' ');
                             };
 
-                            // 3. Функция для выравнивания текста по правому краю (добавляет пробелы слева)
                             auto padLeft = [&countChars](const std::string& str, int width) -> std::string {
                                 int charCount = countChars(str);
                                 if (charCount >= width) {
@@ -575,10 +589,9 @@ int main(int, char**)
 
                             // --- Основная логика отчета ---
 
-                            // Определяем ширину колонок
                             const int W_NICKNAME = 25;
                             const int W_SPECIES = 20;
-                            const int W_COUNT = 22; // "Количество кормлений"
+                            const int W_COUNT = 22;
 
                             // Заголовок файла
                             reportFile << "=== ОТЧЕТ О КОРМЛЕНИИ ЖИВОТНЫХ ===\n";
@@ -614,7 +627,7 @@ int main(int, char**)
                             reportFile << std::string(W_COUNT, '=') << "\n";
 
                             // Строка "ИТОГО"
-                            int prefixWidth = W_NICKNAME + W_SPECIES + 3; // Ширина первых двух колонок и разделителей
+                            int prefixWidth = W_NICKNAME + W_SPECIES + 3;
                             reportFile << padRight("ИТОГО:", prefixWidth) << " | ";
                             reportFile << padLeft(std::to_string(totalFeedings), W_COUNT) << "\n";
 

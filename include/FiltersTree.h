@@ -45,20 +45,15 @@ private:
     void clearNode(FilterNode<T>* node);
 };
 
-// Определения типов деревьев остаются прежними
 typedef FiltersTree<double> PriceFiltersTree;
 typedef FiltersTree<int> QuantityFiltersTree;
 typedef FiltersTree<std::string> DateFiltersTree;
 
-// Обновленное пространство имен для работы с датами
 namespace DateUtils {
-    // Преобразование "DD.MM.YYYY" в "YYYY-MM-DD" для сравнения
     std::string normalizeDateForComparison(const std::string& date);
 
-    // Проверка корректности формата "DD.MM.YYYY"
     bool isValidDateFormat(const std::string& date);
 
-    // Сравнение дат в формате "DD.MM.YYYY"
     int compareDates(const std::string& date1, const std::string& date2);
 }
 

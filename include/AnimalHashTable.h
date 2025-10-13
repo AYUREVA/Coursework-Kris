@@ -5,28 +5,25 @@
 #include <string>
 #include <ostream>
 
-// Структура для Справочника_1: Животные
 struct Animal {
-    std::string nickname; // Кличка (ключ поиска)
-    std::string species;  // Вид
-    std::string cage;     // Вольер
+    std::string nickname;
+    std::string species;
+    std::string cage;
 
     Animal() = default;
     Animal(std::string nick, std::string sp, std::string c)
         : nickname(std::move(nick)), species(std::move(sp)), cage(std::move(c)) {}
 };
 
-// Элемент хеш-таблицы
 struct HashEntry {
-    std::string key; // Ключ теперь string
+    std::string key;
     int index;
-    int status;      // 0 - empty, 1 - occupied, 2 - deleted
+    int status;
 
     HashEntry() : index(-1), status(0) {}
     HashEntry(std::string k, int idx) : key(std::move(k)), index(idx), status(1) {}
 };
 
-// Класс хеш-таблицы для животных
 class AnimalHashTable {
 public:
     AnimalHashTable(int initialSize = 16);
@@ -49,7 +46,6 @@ public:
         return HashEntry();
     }
 
-    // Публичные методы для получения хешей (для отладки)
     int getPrimaryHash(const std::string& key) const { return primaryHash(key); }
     int getSecondaryHash() const { return getStepSize(); }
 
@@ -66,9 +62,7 @@ private:
     static constexpr double LOAD_FACTOR_MAX = 0.75;
     static constexpr double LOAD_FACTOR_MIN = 0.25;
 
-    // Новая хеш-функция (свертка)
     int primaryHash(const std::string& key) const;
-    // Новый шаг пробирования
     int getStepSize() const;
 
     void rehash(int newCapacity);

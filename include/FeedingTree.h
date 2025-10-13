@@ -6,17 +6,15 @@
 #include <ostream>
 #include "CircularList.h"
 
-// Структура для Справочника_2: Кормления
 struct FeedingEntry {
-    std::string nickname; // Кличка (ключ)
-    std::string feedType; // Тип корма
-    int quantity;         // Количество
-    std::string date;     // Дата кормления
+    std::string nickname;
+    std::string feedType;
+    int quantity;
+    std::string date;
 };
 
-// Узел AVL-дерева кормлений
 struct FeedingNode {
-    std::string key; // Ключ теперь string (кличка)
+    std::string key;
     int balance;
     FeedingNode *left, *right;
     CircularList indices;
@@ -24,7 +22,6 @@ struct FeedingNode {
     FeedingNode(std::string k, int idx);
 };
 
-// Класс AVL-дерева для кормлений
 class FeedingTree {
 public:
     FeedingTree();
@@ -37,7 +34,6 @@ public:
     void print(std::ostream &out) const;
 
     bool importFromFile(const std::string &filename, DynamicArray<FeedingEntry> &outEntries, int maxLines = 0);
-    // Изменено: метод теперь принимает DynamicArray для сохранения данных
     bool exportToFile(const std::string &filename, const DynamicArray<FeedingEntry>& feedings) const;
 
     void clear();
@@ -50,7 +46,6 @@ private:
     FeedingNode* rotateLeft(FeedingNode* a);
     FeedingNode* rotateRight(FeedingNode* a);
 
-    // Функции балансировки
     FeedingNode* balanceLeftInsert(FeedingNode* node, bool &heightInc);
     FeedingNode* balanceRightInsert(FeedingNode* node, bool &heightInc);
     FeedingNode* balanceLeft(FeedingNode* node, bool &heightDec);
