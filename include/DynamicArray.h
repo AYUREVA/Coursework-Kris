@@ -2,6 +2,7 @@
 #define DYNAMIC_ARRAY_H
 
 #include <utility>
+#include <cstddef>
 
 template <typename T>
 class DynamicArray {

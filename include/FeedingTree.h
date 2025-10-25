@@ -51,7 +51,7 @@ private:
     FeedingNode* balanceLeft(FeedingNode* node, bool &heightDec);
     FeedingNode* balanceRight(FeedingNode* node, bool &heightDec);
 
-    void prettyPrint(FeedingNode* node, std::ostream &out, const std::string& prefix, bool isLast, int level) const;
+    void prettyPrint(FeedingNode* node, std::ostream &out, const std::string& prefix, int level) const;
     void clearNode(FeedingNode* node);
 };
 
