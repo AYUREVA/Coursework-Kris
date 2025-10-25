@@ -54,17 +54,17 @@ void FeedingTree::print(std::ostream &out) const {
         return;
     }
     out << "Структура дерева:\n";
-    prettyPrint(root, out, "", true, 1);
+    prettyPrint(root, out, "", 1); // убрали true
 }
 
-void FeedingTree::prettyPrint(FeedingNode* node, std::ostream &out, const std::string& prefix, bool isLast, int level) const {
+void FeedingTree::prettyPrint(FeedingNode* node, std::ostream &out, const std::string& prefix, int level) const {
     if (!node) return;
     if (node->right) {
-        prettyPrint(node->right, out, prefix + "        ", false, level + 1);
+        prettyPrint(node->right, out, prefix + "        ", level + 1);
     }
     out << prefix << std::string(level, '<') << node->key << "\n";
     if (node->left) {
-        prettyPrint(node->left, out, prefix + "        ", true, level + 1);
+        prettyPrint(node->left, out, prefix + "        ", level + 1);
     }
 }
 
